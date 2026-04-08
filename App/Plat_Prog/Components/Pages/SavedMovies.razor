@@ -1,0 +1,52 @@
+﻿@page "/saved"
+@rendermode InteractiveServer
+@using Plat_prog.Models
+@inject Plat_prog.Data.AppDbContext Db
+
+<h3>Saved Movies</h3>
+
+@if (movies == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <ul>
+        @foreach (var movie in movies)
+        {
+            <li>
+                @movie.Title (@movie.Year)
+                <button @onclick="() => DeleteMovie(movie.Id)">
+                    Delete
+                </button>
+                <a href="/movie/@movie.ImdbId">Szczegóły</a>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    List<Movie> movies;
+
+    protected override void OnInitialized()
+    {
+        LoadMovies();
+    }
+
+    void LoadMovies()
+    {
+        movies = Db.Movies.ToList();
+    }
+
+    async Task DeleteMovie(int id)
+    {
+        var movie = Db.Movies.FirstOrDefault(m => m.Id == id);
+
+        if (movie != null)
+        {
+            Db.Movies.Remove(movie);
+            await Db.SaveChangesAsync();
+            LoadMovies();
+        }
+    }
+}

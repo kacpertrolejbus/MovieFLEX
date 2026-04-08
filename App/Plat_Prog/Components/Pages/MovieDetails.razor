@@ -1,0 +1,62 @@
+﻿@page "/movie/{imdbId}"
+@rendermode InteractiveServer
+@using Plat_prog.Models
+@inject Plat_prog.Services.MovieService MovieService
+@inject Plat_prog.Data.AppDbContext Db
+
+<h3>Szczegóły filmu</h3>
+
+@if (movie == null)
+{
+    <p>Ładowanie...</p>
+}
+else
+{
+    <h4>@movie.Title (@movie.Year)</h4>
+
+    <p><b>Opis:</b> @movie.Plot</p>
+    <p><b>Reżyser:</b> @movie.Director</p>
+    <p><b>Aktorzy:</b> @movie.Actors</p>
+    <p><b>Ocena IMDb:</b> @movie.ImdbRating</p>
+
+    <h5>Opinie:</h5>
+
+    @foreach (var review in reviews)
+    {
+        <div>
+            @review.Rating <br />
+            @review.Content
+        </div>
+        <hr />
+    }
+
+    <h5>Dodaj opinię:</h5>
+
+    <input @bind="newReview.Content" placeholder="Opinia" />
+    <input type="number" @bind="newReview.Rating" min="1" max="10" />
+    <button @onclick="AddReview">Dodaj</button>
+}
+
+@code {
+    [Parameter] public string imdbId { get; set; }
+
+    Movie movie;
+    List<Review> reviews = new();
+    Review newReview = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        movie = await MovieService.GetMovieDetails(imdbId);
+        reviews = Db.Reviews.Where(r => r.ImdbId == imdbId).ToList();
+    }
+
+    async Task AddReview()
+    {
+        newReview.ImdbId = imdbId;
+        Db.Reviews.Add(newReview);
+        await Db.SaveChangesAsync();
+
+        reviews = Db.Reviews.Where(r => r.ImdbId == imdbId).ToList();
+        newReview = new Review();
+    }
+}
